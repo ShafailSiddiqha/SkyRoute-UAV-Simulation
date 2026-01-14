@@ -3,8 +3,15 @@ import React, { useEffect, useState, useCallback } from "react";
 const GRID_SIZE = 15;
 const CELL_SIZE = 36;
 
+/* ✅ ADDITION (SAFE FALLBACK GRID) */
+const createEmptyGrid = () =>
+  Array.from({ length: GRID_SIZE }, () =>
+    Array.from({ length: GRID_SIZE }, () => 0)
+  );
+
 function App() {
-  const [grid, setGrid] = useState([]);
+  /* ✅ CHANGE: initialize grid with fallback instead of [] */
+  const [grid, setGrid] = useState(createEmptyGrid());
   const [route, setRoute] = useState([]);
   const [index, setIndex] = useState(0);
   const [running, setRunning] = useState(false);
@@ -35,6 +42,12 @@ function App() {
           setRoute(data.route);
           setIndex(0);
         }
+      })
+      /* ✅ ADDITION: Render / Netlify fallback */
+      .catch(() => {
+        setGrid(createEmptyGrid());
+        setRoute([]);
+        setIndex(0);
       });
   }, [mode]);
 
@@ -77,6 +90,13 @@ function App() {
       .then(data => {
         setGrid(data.grid);
         setReroutes(0);
+        setIndex(0);
+        setRunning(false);
+      })
+      /* ✅ ADDITION: Render-safe fallback */
+      .catch(() => {
+        setGrid(createEmptyGrid());
+        setRoute([]);
         setIndex(0);
         setRunning(false);
       });
@@ -127,7 +147,6 @@ function App() {
           Status: <strong>{status}</strong>
         </p>
 
-        {/* Control Bar */}
         <div style={{
           display: "flex",
           justifyContent: "space-between",
@@ -169,8 +188,6 @@ function App() {
         </div>
 
         <div style={{ display: "flex", gap: "24px" }}>
-
-          {/* Metrics Panel */}
           <div style={{
             width: "280px",
             background: "linear-gradient(135deg, #ffffff, #eef2f7)",
@@ -182,14 +199,13 @@ function App() {
               📊 Live Metrics
             </h4>
 
-            <MetricRow icon="🧭" label="Mode" value={mode} tip="Current routing strategy" />
-            <MetricRow icon="⚡" label="Speed" value={speedLabel} tip="UAV movement speed" />
-            <MetricRow icon="👣" label="Steps" value={index} tip="Cells traversed so far" />
-            <MetricRow icon="📏" label="Path Length" value={route.length} tip="Total planned route length" />
-            <MetricRow icon="🔁" label="Re-routes" value={reroutes} tip="Times route was recalculated" />
+            <MetricRow icon="🧭" label="Mode" value={mode} tip="Routing strategy" />
+            <MetricRow icon="⚡" label="Speed" value={speedLabel} tip="UAV speed" />
+            <MetricRow icon="👣" label="Steps" value={index} tip="Steps taken" />
+            <MetricRow icon="📏" label="Path Length" value={route.length} tip="Total path" />
+            <MetricRow icon="🔁" label="Re-routes" value={reroutes} tip="Recalculations" />
           </div>
 
-          {/* Grid */}
           <div style={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
             <div style={{
               display: "grid",
@@ -215,9 +231,7 @@ function App() {
                     {route[index] &&
                      route[index].x === r &&
                      route[index].y === c
-                      ? <span style={{
-                          animation: "pulse 1s infinite"
-                        }}>🚁</span>
+                      ? <span style={{ animation: "pulse 1s infinite" }}>🚁</span>
                       : ""}
                   </div>
                 ))
@@ -226,29 +240,13 @@ function App() {
           </div>
         </div>
 
-        {/* Legend */}
-        <div style={{
-          marginTop: "20px",
-          textAlign: "center",
-          background: "#ffffff",
-          padding: "10px",
-          borderRadius: "8px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
-        }}>
-          🟦 Start &nbsp; 🟨 Destination &nbsp; 🚁 UAV &nbsp;
-          🟩 Path &nbsp; 🟥 Obstacle &nbsp; ⬜ Free
-        </div>
-
-        {/* Animation */}
-        <style>
-          {`
-            @keyframes pulse {
-              0% { transform: scale(1); }
-              50% { transform: scale(1.2); }
-              100% { transform: scale(1); }
-            }
-          `}
-        </style>
+        <style>{`
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+          }
+        `}</style>
 
       </div>
     </div>
